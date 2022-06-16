@@ -736,15 +736,16 @@ readlink(const char* pathname, char* buf, int bufsize){
 struct inode*
 dereferencelink(struct inode* ip, int* dereference){
   struct inode* ans = ip;
-  char buffer[100];
+  char buffer[256];
   char name[DIRSIZ];
   while(ans->type == T_SYMLINK){
+    printf("here\n");
     *dereference = *dereference - 1;
     if(!(*dereference)){
       iunlockput(ans);
       return 0;
     }
-    getlinktarget(ans, buffer, ans->size);
+    getlinktarget(ans, buffer, 256);
     iunlockput(ans);
     ans = namex(buffer, 0, name, *dereference);
     if(!ans){

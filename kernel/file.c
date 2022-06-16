@@ -90,14 +90,27 @@ filestat(struct file *f, uint64 addr)
   struct proc *p = myproc();
   struct stat st;
   int max_deref = MAX_DEREFERENCE;
-  struct inode* deref_ip = dereferencelink(f->ip,&max_deref);
+  struct inode* ip = f->ip;
   if(f->type == FD_INODE || f->type == FD_DEVICE){
     //ilock(f->ip);
     //stati(f->ip, &st);
     //iunlock(f->ip);
-    ilock(deref_ip);
-    stati(deref_ip, &st);
-    iunlock(deref_ip);
+    ilock(ip);
+    struct inode* deref_inode = dereferencelink(ip, &max_deref);
+    if (ip->inum != deref_inode->inum){
+      st.dev = ip->dev;
+      st.ino = ip->inum;
+      st.nlink = ip->nlink;
+      st.size = ip->size;
+      iunlock(ip);
+      //ilock(deref_inode);
+      st.type = deref_inode->type;
+      ip = deref_inode;
+    } 
+    else{
+      stati(ip, &st);
+    } 
+    iunlock(ip);
     if(copyout(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
       return -1;
     return 0;

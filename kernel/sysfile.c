@@ -279,7 +279,6 @@ create(char *path, short type, short major, short minor)
     panic("create: dirlink");
 
   iunlockput(dp);
-
   return ip;
 }
 
@@ -291,7 +290,8 @@ sys_open(void)
   struct file *f;
   struct inode *ip;
   int n;
-
+  int max_deref = MAX_DEREFERENCE;
+  
   if((n = argstr(0, path, MAXPATH)) < 0 || argint(1, &omode) < 0)
     return -1;
 
@@ -308,10 +308,14 @@ sys_open(void)
       end_op();
       return -1;
     }
-    int maxderef = MAX_DEREFERENCE;
-    ip = dereferencelink(ip, &maxderef);
+    
     ilock(ip);
-
+    struct inode* deref_inode = dereferencelink(ip, &max_deref);
+    if (ip->inum != deref_inode->inum){
+       iunlock(ip);
+       //ilock(deref_inode);
+       ip = deref_inode;
+    }
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
@@ -347,7 +351,6 @@ sys_open(void)
   if((omode & O_TRUNC) && ip->type == T_FILE){
     itrunc(ip);
   }
-
   iunlock(ip);
   end_op();
 
@@ -402,8 +405,13 @@ sys_chdir(void)
     end_op();
     return -1;
   }
-  ip = dereferencelink(ip, &max_deref);
   ilock(ip);
+  struct inode* deref_inode = dereferencelink(ip, &max_deref);
+  if (ip != deref_inode){
+    iunlock(ip);
+    //ilock(deref_inode);
+    ip = deref_inode;
+  }
   if(ip->type != T_DIR){
     iunlockput(ip);
     end_op();

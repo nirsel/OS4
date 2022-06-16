@@ -29,12 +29,10 @@ ls(char *path)
   int fd;
   struct dirent de;
   struct stat st;
-
   if((fd = open(path, 0)) < 0){
     fprintf(2, "ls: cannot open %s\n", path);
     return;
   }
-
   if(fstat(fd, &st) < 0){
     fprintf(2, "ls: cannot stat %s\n", path);
     close(fd);
@@ -43,9 +41,11 @@ ls(char *path)
 
   switch(st.type){
   case T_SYMLINK:
+    printf("here2\n");
     read(fd, buf, 512);
     printf("%s->", fmtname(path));
     ls(buf);
+    printf("after recursive ls\n");
   case T_FILE:
     printf("%s %d %d %l\n", fmtname(path), st.type, st.ino, st.size);
     break;

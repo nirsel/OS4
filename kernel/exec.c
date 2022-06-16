@@ -27,8 +27,14 @@ exec(char *path, char **argv)
     end_op();
     return -1;
   }
-  ip = dereferencelink(ip, &max_deref);
+  //ip = dereferencelink(ip, &max_deref);
   ilock(ip);
+  struct inode* deref_inode = dereferencelink(ip, &max_deref);
+  if (ip != deref_inode){
+    iunlock(ip);
+    //ilock(deref_inode);
+    ip = deref_inode;
+  }
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
@@ -115,7 +121,6 @@ exec(char *path, char **argv)
   p->trapframe->epc = elf.entry;  // initial program counter = main
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
-
   return argc; // this ends up in a0, the first argument to main(argc, argv)
 
  bad:
