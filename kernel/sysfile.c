@@ -308,7 +308,10 @@ sys_open(void)
       end_op();
       return -1;
     }
+    int maxderef = MAX_DEREFERENCE;
+    ip = dereferencelink(ip, &maxderef);
     ilock(ip);
+
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
@@ -393,12 +396,13 @@ sys_chdir(void)
   char path[MAXPATH];
   struct inode *ip;
   struct proc *p = myproc();
-  
+  int max_deref = MAX_DEREFERENCE;
   begin_op();
   if(argstr(0, path, MAXPATH) < 0 || (ip = namei(path)) == 0){
     end_op();
     return -1;
   }
+  ip = dereferencelink(ip, &max_deref);
   ilock(ip);
   if(ip->type != T_DIR){
     iunlockput(ip);
@@ -482,5 +486,51 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+  return 0;
+}
+
+uint64
+sys_readlink(void)
+{
+  char pathname[MAXPATH];
+  
+  int bufsize;
+
+  if (argstr(0, pathname, MAXPATH) < 0)
+    return -1;
+  if(argint(2, (int*)(&bufsize)) < 0){
+    return -1;
+  }
+  char buf[bufsize];
+  if (argstr(1, buf, bufsize) < 0)
+    return -1;
+
+  return readlink(pathname, buf, bufsize);
+}
+
+uint64
+sys_symlink(void)
+{
+  char target[MAXPATH];
+  memset(target, 0, sizeof(target));
+  char path[MAXPATH];
+  if(argstr(0, target, MAXPATH) < 0 || argstr(1, path, MAXPATH) < 0){
+    return -1;
+  }
+  
+  struct inode *ip;
+
+  begin_op();
+  if((ip = create(path, T_SYMLINK, 0, 0)) == 0){
+    end_op();
+    return -1;
+  }
+
+  if(writei(ip, 0, (uint64)target, 0, MAXPATH) != MAXPATH){
+    return -1;
+  }
+
+  iunlockput(ip);
+  end_op();
   return 0;
 }

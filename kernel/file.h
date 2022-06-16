@@ -28,7 +28,6 @@ struct inode {
   short nlink;
   uint size;
   uint addrs[NDIRECT+2]; 
-  uint padding[15];  // padding so the structure size will be a divisor of 256
 };
 
 // map major device number to device functions.

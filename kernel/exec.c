@@ -20,15 +20,15 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pagetable_t pagetable = 0, oldpagetable;
   struct proc *p = myproc();
-
+  int max_deref = MAX_DEREFERENCE;
   begin_op();
 
   if((ip = namei(path)) == 0){
     end_op();
     return -1;
   }
+  ip = dereferencelink(ip, &max_deref);
   ilock(ip);
-
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;

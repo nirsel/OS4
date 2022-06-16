@@ -31,6 +31,7 @@ main()
     }
     if (blocks == 12 + 256 + 256 * 256){
         printf("Finished writing 10MB\n");
+        break;
     }
     if (blocks % 1000 == 0)
       printf("Finished another 1000 blocks\n");

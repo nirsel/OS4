@@ -89,11 +89,15 @@ filestat(struct file *f, uint64 addr)
 {
   struct proc *p = myproc();
   struct stat st;
-  
+  int max_deref = MAX_DEREFERENCE;
+  struct inode* deref_ip = dereferencelink(f->ip,&max_deref);
   if(f->type == FD_INODE || f->type == FD_DEVICE){
-    ilock(f->ip);
-    stati(f->ip, &st);
-    iunlock(f->ip);
+    //ilock(f->ip);
+    //stati(f->ip, &st);
+    //iunlock(f->ip);
+    ilock(deref_ip);
+    stati(deref_ip, &st);
+    iunlock(deref_ip);
     if(copyout(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
       return -1;
     return 0;
