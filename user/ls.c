@@ -30,7 +30,7 @@ ls(char *path)
   int fd;
   struct dirent de;
   struct stat st;
-  if((fd = open(path, 0)) < 0){
+  if((fd = open(path, O_NOFOLLOWSLINK)) < 0){
     fprintf(2, "ls: cannot open %s\n", path);
     return;
   }
@@ -42,9 +42,9 @@ ls(char *path)
 
   switch(st.type){
   case T_SYMLINK:
-    read(fd, buf, 512);
-    printf("%s->", fmtname(path));
-    ls(buf);
+    readlink(path, buf, 512);
+    printf("%s -> %s %d %d 0\n", fmtname(path), buf, st.type,st.ino);
+    break;
   case T_FILE:
     printf("%s %d %d %l\n", fmtname(path), st.type, st.ino, st.size);
     break;
@@ -69,7 +69,7 @@ ls(char *path)
       if (st.type == T_SYMLINK){
         char target[256];
         readlink(buf, target, 256);
-        printf("%s->%s %d %d %d\n", fmtname(buf),target, st.type, st.ino, st.size);
+        printf("%s->%s %d %d 0\n", fmtname(buf),target, st.type, st.ino);
       }
       else
         printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);

@@ -533,7 +533,7 @@ sys_readlink(void)
     end_op();
     return -1;
   }
-  if (ip->size > bufsize) //male sure have enought space to write
+  if (ip->size > bufsize) 
   {
     iunlock(ip);
     end_op();
@@ -554,7 +554,7 @@ sys_readlink(void)
 
   end_op();
   return res;
-  return 0;
+  
 }
 
 uint64
