@@ -67,7 +67,9 @@ main()
   const char* newpath= "/new_cat";
   symlink(oldpath, newpath);
   struct stat st;
-  int fd = open(newpath, 0);
+  char buf[256];
+  readlink(newpath, buf, 256);
+  int fd = open(newpath, O_RDONLY|O_NOFOLLOWSLINK);
   fstat(fd, &st);
   printf("%s %d %d %d\n", newpath, st.type, st.ino, st.size);
 

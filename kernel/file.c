@@ -89,28 +89,37 @@ filestat(struct file *f, uint64 addr)
 {
   struct proc *p = myproc();
   struct stat st;
-  int max_deref = MAX_DEREFERENCE;
-  struct inode* ip = f->ip;
+  //int max_deref = MAX_DEREFERENCE;
+  //struct inode* ip = f->ip;
+  
   if(f->type == FD_INODE || f->type == FD_DEVICE){
-    //ilock(f->ip);
-    //stati(f->ip, &st);
-    //iunlock(f->ip);
-    ilock(ip);
-    struct inode* deref_inode = dereferencelink(ip, &max_deref);
-    if (ip->inum != deref_inode->inum){
-      st.dev = ip->dev;
-      st.ino = ip->inum;
-      st.nlink = ip->nlink;
-      st.size = ip->size;
-      iunlock(ip);
-      //ilock(deref_inode);
-      st.type = deref_inode->type;
-      ip = deref_inode;
-    } 
-    else{
-      stati(ip, &st);
-    } 
-    iunlock(ip);
+    ilock(f->ip);
+    stati(f->ip, &st);
+    iunlock(f->ip);
+    //ilock(ip);
+    // int nlink = ip->nlink;
+    // int size = ip->size;
+    // int inum = ip->inum;
+    // int type = ip->type;
+    // struct inode* deref_inode = dereferencelink(ip, &max_deref);
+    // if (ip->inum != deref_inode->inum){
+    //   st.dev = ip->dev;
+    //   st.ino = ip->inum;
+    //   st.nlink = ip->nlink;
+    //   st.size = ip->size;
+    //   iunlock(ip);
+    //   //ilock(deref_inode);
+    //   st.type = deref_inode->type;
+    //   ip = deref_inode;
+    // } 
+    // else{
+    //   stati(ip, &st);
+    // } 
+    // st.nlink = nlink;
+    // st.size = size;
+    // st.ino = inum;
+    // st.type = type;
+    //iunlock(ip);
     if(copyout(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
       return -1;
     return 0;

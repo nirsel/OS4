@@ -75,9 +75,13 @@ stat(const char *n, struct stat *st)
 {
   int fd;
   int r;
-
-  fd = open(n, O_RDONLY);
-  if(fd < 0)
+  // if (st->type != T_SYMLINK)
+  //   fd = open(n, O_RDONLY);
+  // else{
+  //   fd = open(n, O_RDONLY | O_NOFOLLOWSLINK);
+  // }
+  fd = open(n, O_NOFOLLOWSLINK);
+  if (fd < 0)
     return -1;
   r = fstat(fd, st);
   close(fd);

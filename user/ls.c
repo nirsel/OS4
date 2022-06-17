@@ -2,6 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fs.h"
+#include "kernel/fcntl.h"
 
 char*
 fmtname(char *path)
@@ -41,11 +42,9 @@ ls(char *path)
 
   switch(st.type){
   case T_SYMLINK:
-    printf("here2\n");
     read(fd, buf, 512);
     printf("%s->", fmtname(path));
     ls(buf);
-    printf("after recursive ls\n");
   case T_FILE:
     printf("%s %d %d %l\n", fmtname(path), st.type, st.ino, st.size);
     break;
@@ -67,7 +66,13 @@ ls(char *path)
         printf("ls: cannot stat %s\n", buf);
         continue;
       }
-      printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+      if (st.type == T_SYMLINK){
+        char target[256];
+        readlink(buf, target, 256);
+        printf("%s->%s %d %d %d\n", fmtname(buf),target, st.type, st.ino, st.size);
+      }
+      else
+        printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
     }
     break;
   }

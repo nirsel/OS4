@@ -727,9 +727,11 @@ readlink(const char* pathname, char* buf, int bufsize){
   if(!ip){
     return -1;
   }
+  
   ilock(ip);
   ans = getlinktarget(ip, buf, bufsize);
   iunlock(ip);
+  
   return ans;
 }
 
@@ -739,13 +741,12 @@ dereferencelink(struct inode* ip, int* dereference){
   char buffer[256];
   char name[DIRSIZ];
   while(ans->type == T_SYMLINK){
-    printf("here\n");
     *dereference = *dereference - 1;
     if(!(*dereference)){
       iunlockput(ans);
       return 0;
     }
-    getlinktarget(ans, buffer, 256);
+    getlinktarget(ans, buffer, ans->size);
     iunlockput(ans);
     ans = namex(buffer, 0, name, *dereference);
     if(!ans){

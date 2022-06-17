@@ -296,7 +296,6 @@ sys_open(void)
     return -1;
 
   begin_op();
-
   if(omode & O_CREATE){
     ip = create(path, T_FILE, 0, 0);
     if(ip == 0){
@@ -310,13 +309,14 @@ sys_open(void)
     }
     
     ilock(ip);
-    struct inode* deref_inode = dereferencelink(ip, &max_deref);
-    if (ip->inum != deref_inode->inum){
-       iunlock(ip);
-       //ilock(deref_inode);
-       ip = deref_inode;
+    if (ip->type == T_SYMLINK && (omode != O_NOFOLLOWSLINK)){
+      if ((ip = dereferencelink(ip, &max_deref)) == 0)
+      {
+        end_op();
+        return -1;
+      }
     }
-    if(ip->type == T_DIR && omode != O_RDONLY){
+    if(ip->type == T_DIR && omode != O_RDONLY && (omode != O_NOFOLLOWSLINK)){
       iunlockput(ip);
       end_op();
       return -1;
@@ -503,17 +503,58 @@ sys_readlink(void)
   char pathname[MAXPATH];
   
   int bufsize;
-
+  uint64 addr;
   if (argstr(0, pathname, MAXPATH) < 0)
     return -1;
-  if(argint(2, (int*)(&bufsize)) < 0){
+  if(argint(2, (&bufsize)) < 0){
     return -1;
   }
-  char buf[bufsize];
-  if (argstr(1, buf, bufsize) < 0)
+  if(argaddr(1,&addr) < 0){
     return -1;
+  }
+  
+  // int buf;
+  // if (argint(1, &buf) < 0)
+  //   return -1;
+  // char ** pp;
+  // *pp = (char*)buf;
+ // readlink(pathname, (char*)addr, bufsize);
+  struct inode *ip;
+  begin_op();
+  if ((ip = namei(pathname)) == 0) //check if path exist
+  {
+    end_op();
+    return -1;
+  }
+  ilock(ip);
+  if (ip->type != T_SYMLINK)
+  {
+    iunlock(ip);
+    end_op();
+    return -1;
+  }
+  if (ip->size > bufsize) //male sure have enought space to write
+  {
+    iunlock(ip);
+    end_op();
+    return -1;
+  }
+  char buffer[bufsize];
+  int res = readi(ip, 0, (uint64)buffer, 0, bufsize);
+  struct proc *p = myproc();
 
-  return readlink(pathname, buf, bufsize);
+  if (copyout(p->pagetable, addr, buffer, bufsize) < 0)
+  {
+
+    iunlock(ip);
+    end_op();
+    return -1;
+  }
+  iunlock(ip);
+
+  end_op();
+  return res;
+  return 0;
 }
 
 uint64
