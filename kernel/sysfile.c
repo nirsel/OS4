@@ -406,16 +406,19 @@ sys_chdir(void)
     return -1;
   }
   ilock(ip);
-  struct inode* deref_inode = dereferencelink(ip, &max_deref);
-  if (ip != deref_inode){
-    iunlock(ip);
-    //ilock(deref_inode);
-    ip = deref_inode;
-  }
-  if(ip->type != T_DIR){
+  if (ip->type != T_DIR && ip->type != T_SYMLINK)
+  {
     iunlockput(ip);
     end_op();
     return -1;
+  }
+  if (ip->type == T_SYMLINK)
+  {
+    if ((ip = dereferencelink(ip, &max_deref)) == 0)
+    {
+      end_op();
+      return -1;
+    }
   }
   iunlock(ip);
   iput(p->cwd);
@@ -452,7 +455,25 @@ sys_exec(void)
     if(fetchstr(uarg, argv[i], PGSIZE) < 0)
       goto bad;
   }
+  //   struct inode *ip;
 
+  //  if((ip = namei(path)) == 0){ // check for inode's name
+  //    end_op();
+  //    return -1;
+  //  }
+  //  ilock(ip);
+  //  if (ip->type == T_SYMLINK)
+  //  {
+  //    if (dereferenceLinkPath(ip, path, MAXPATH) == 0)
+  //    { //returns unlocks ip
+  //      end_op();
+  //      return -1;
+  //    }
+  //  }
+  // else
+  // {
+  //   iunlock(ip);
+  // }
   int ret = exec(path, argv);
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
